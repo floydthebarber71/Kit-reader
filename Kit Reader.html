@@ -1,0 +1,909 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kit Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: one centred column. Controls first, then the sheet (the hero), then transport buttons directly under it. */
+:root {
+  --bg: #E9EDF1;
+  --surface: #F6F8FA;
+  --sheet: #FFFFFF;
+  --ink: #13202C;
+  --muted: #586775;
+  --line: #CBD3DC;
+  --accent: #17324D;
+  --on-accent: #FFFFFF;
+  --brass: #A66D05;
+  --go: #77DD77;
+  --on-go: #0C2E14;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E161E; --surface: #16212B; --sheet: #1B2833; --ink: #E7EDF2; --muted: #9AA9B7;
+    --line: #2C3B48; --accent: #E3B04B; --on-accent: #1A1305; --brass: #E3B04B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E161E; --surface: #16212B; --sheet: #1B2833; --ink: #E7EDF2; --muted: #9AA9B7;
+  --line: #2C3B48; --accent: #E3B04B; --on-accent: #1A1305; --brass: #E3B04B;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; padding-inline: 16px; padding-block: 20px 40px; }
+.app { max-width: 920px; margin-inline: auto; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 2.6rem; line-height: 1; letter-spacing: .02em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.label { display: block; font-family: var(--font-display); font-weight: 600; font-size: .9rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (min-width: 640px) { .levels { grid-template-columns: repeat(6, 1fr); } }
+.lvl { font: inherit; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 0; }
+.lvl b { font-family: var(--font-display); font-size: 1.5rem; line-height: 1.1; font-weight: 700; }
+.lvl span { font-size: .78rem; color: var(--muted); }
+.lvl[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.lvl[aria-pressed="true"] span { color: inherit; opacity: .85; }
+.blurb { margin: 10px 0 0; color: var(--ink); min-height: 3em; max-width: 70ch; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 20px; align-items: end; }
+.opt { min-width: 0; }
+.tempo-line { display: flex; align-items: baseline; gap: 8px; }
+.tempo-num { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1.2; font-variant-numeric: tabular-nums; width: 3.2ch; padding: 0; border: 0; border-bottom: 2px dashed var(--line); border-radius: 0; background: transparent; color: var(--ink); }
+.tempo-line small { color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+select { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+.check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.meters { border: 0; margin: 0; padding: 0; min-width: 0; }
+.meters legend { padding: 0; }
+.meter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px 16px; }
+.hint { margin: 8px 0 0; color: var(--muted); font-size: .9rem; max-width: 70ch; }
+.stand { background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stand-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.meta { font-family: var(--font-display); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 1rem; color: var(--muted); }
+.beats { display: flex; align-items: center; gap: 8px; }
+.beats i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); display: block; }
+.beats i.on { background: var(--brass); border-color: var(--brass); }
+.status { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; min-width: 9ch; text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+.sheet { padding: 12px 16px 4px; display: flex; flex-direction: column; }
+.row { position: relative; height: 190px; }
+.row svg { display: block; max-width: 100%; }
+.playhead { position: absolute; top: 20px; height: 150px; width: 3px; border-radius: 2px; background: var(--brass); opacity: 0; pointer-events: none; }
+.counting { margin: 0; padding: 0 16px 12px; font-family: var(--font-display); font-size: .95rem; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; overflow-x: auto; white-space: nowrap; }
+.error { margin: 12px 16px; padding: 12px; border: 1px solid var(--brass); border-radius: 8px; }
+.transport { display: grid; grid-template-columns: 2.1fr .85fr .85fr 1.15fr; gap: 8px; }
+.btn { font-family: var(--font-display); font-weight: 700; font-size: clamp(.9rem, 4.2vw, 1.25rem); letter-spacing: .04em; text-transform: uppercase; border-radius: 10px; border: 2px solid var(--accent); background: transparent; color: var(--ink); padding: 10px 4px; cursor: pointer; min-height: 50px; min-width: 0; white-space: nowrap; }
+.btn.primary { white-space: normal; line-height: 1.05; background: var(--accent); color: var(--on-accent); }
+.btn[aria-pressed="true"] { background: var(--go); border-color: var(--go); color: var(--on-go); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.how { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+.how summary { cursor: pointer; font-family: var(--font-display); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.how ol { margin: 10px 0 0; padding-left: 1.2rem; max-width: 70ch; display: flex; flex-direction: column; gap: 6px; }
+.how p { color: var(--muted); font-size: .9rem; max-width: 70ch; margin: 10px 0 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main class="app">
+  <header>
+    <h1>Kit Reader</h1>
+    <p class="lede">Random drum-kit reading lines, graded from Grade 3 up to Grade 6. Read the line, play it to the click, then listen to how it should sound.</p>
+  </header>
+
+  <section class="panel" aria-label="Settings">
+    <div>
+      <span class="label" id="lvlLabel">Level</span>
+      <div id="levels" class="levels" role="group" aria-labelledby="lvlLabel"></div>
+      <p id="blurb" class="blurb"></p>
+    </div>
+    <div class="opts">
+      <div class="opt">
+        <label class="label" for="tempo">Tempo</label>
+        <div class="tempo-line"><input id="tempoNum" class="tempo-num" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" value="70" aria-label="Tempo in beats per minute (tap to type)"><small id="tempoUnit">BPM (quarter note)</small></div>
+        <input id="tempo" type="range" min="40" max="180" step="2" value="70">
+      </div>
+      <div class="opt">
+        <label class="label" for="bars">Length</label>
+        <select id="bars">
+          <option value="2">2 bars</option>
+          <option value="4" selected>4 bars</option>
+          <option value="8">8 bars</option>
+        </select>
+      </div>
+      <div class="opt">
+        <label class="check"><input id="loop" type="checkbox" checked> Loop</label>
+        <label class="check"><input id="countin" type="checkbox" checked> Count-in bar</label>
+        <label class="check"><input id="clickHear" type="checkbox" checked> Click while kit is on</label>
+        <label class="check"><input id="repeat" type="checkbox"> Repeat the groove (exam style)</label>
+      </div>
+    </div>
+    <fieldset class="meters" id="meters">
+      <legend class="label">Time signatures</legend>
+      <div class="meter-grid">
+        <label class="check"><input type="checkbox" data-m="4/4" checked> 4/4</label>
+        <label class="check"><input type="checkbox" data-m="3/4"> 3/4</label>
+        <label class="check"><input type="checkbox" data-m="6/8"> 6/8</label>
+        <label class="check"><input type="checkbox" data-m="5/4"> 5/4</label>
+        <label class="check"><input type="checkbox" data-m="shuf"> 4/4 shuffle (triplets)</label>
+      </div>
+      <p class="hint">Each new line uses one of the ticked time signatures, chosen at random. Leave only 4/4 ticked for the standard lines, or tick a single one to practise it on its own. In 6/8 the tempo counts dotted quarter notes, so there are two beats in a bar.</p>
+    </fieldset>
+  </section>
+
+  <div class="transport" role="group" aria-label="Playback">
+    <button id="newBtn" class="btn primary" type="button">Generate new line</button>
+    <button id="playBtn" class="btn play" type="button" aria-pressed="false" aria-label="Play">Play</button>
+    <button id="stopBtn" class="btn" type="button">Stop</button>
+    <button id="hearBtn" class="btn" type="button" aria-pressed="false">Hear kit</button>
+  </div>
+
+  <section class="stand" aria-label="Reading line">
+    <div class="stand-head">
+      <span class="meta" id="meta"></span>
+      <span class="beats" id="beats" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="status" id="status" role="status" aria-live="polite">Ready</span>
+    </div>
+    <div id="sheet" class="sheet"></div>
+    <p class="counting">1 e &amp; a &nbsp; 2 e &amp; a &nbsp; 3 e &amp; a &nbsp; 4 e &amp; a</p>
+    <div id="err" class="error" hidden></div>
+  </section>
+
+
+  <details class="how">
+    <summary>How to practise with it</summary>
+    <ol>
+      <li>Press Generate new line. Look at it for ten seconds and count it out loud, without playing.</li>
+      <li>Press Play. After the count-in, play the line on your kit along with the click, and keep going through mistakes. In the exam there is no stopping. Press Play again to pause, and Stop to go back to the start.</li>
+      <li>Press Hear kit at any point to switch the kit sound on while the line keeps playing, and again to switch it off. Tick "Click while kit is on" if you want the click under the kit.</li>
+      <li>Start at a tempo where you play it cleanly first time, and raise it a little each week. Tap the tempo number to type an exact value.</li>
+    </ol>
+    <p>The levels are my own rough fit to the Grade 3 to 6 range. They are not official RSL material, so compare them with the sample sight-reading tests on the RSL website. Hi-hat is the x above the staff, snare is the middle space, kick is the bottom space. Notes in brackets are ghost notes (play them very quietly).</p>
+  </details>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
+<script>
+(function () {
+'use strict';
+/* ---------- Meters ----------
+   One slot = one 16th note, except shuffle where one slot = one triplet 8th.
+   n = slots per bar, beat = slots per click, div = slots per BPM beat. */
+const METERS = {
+  '4/4': { id: '4/4', label: '4/4', ts: [4, 4], n: 16, beat: 4, beats: 4, div: 4, kind: 'straight', unit: 'quarter note' },
+  '3/4': { id: '3/4', label: '3/4', ts: [3, 4], n: 12, beat: 4, beats: 3, div: 4, kind: 'straight', unit: 'quarter note' },
+  '5/4': { id: '5/4', label: '5/4', ts: [5, 4], n: 20, beat: 4, beats: 5, div: 4, kind: 'straight', unit: 'quarter note' },
+  '6/8': { id: '6/8', label: '6/8', ts: [6, 8], n: 12, beat: 6, beats: 2, div: 6, kind: 'c68', unit: 'dotted quarter' },
+  'shuf': { id: 'shuf', label: '4/4 shuffle', ts: [4, 4], n: 12, beat: 3, beats: 4, div: 3, kind: 'trip', unit: 'quarter note' }
+};
+
+/* ---------- Pattern generator ---------- */
+const rnd = (p) => Math.random() < p;
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
+const LEVELS = [
+  { grade: 'Grade 3', hat16: 0, kicks: [[0, 8], [0, 8], [0, 10]], ghost: 0, open: 0, crash: 0, fill: 0, fillP: 0, half: 0,
+    blurb: 'Steady 8th-note hi-hat, snare on 2 and 4, kick on 1 and 3 with the odd extra kick on the "and" of 3. No fills.' },
+  { grade: 'Grade 3+', hat16: 0, kicks: [[0, 8], [0, 10], [0, 2, 8], [0, 8, 10], [0, 6, 8]], ghost: 0, open: 0, crash: 0, fill: 1, fillP: 0.6, half: 0,
+    blurb: 'Same 8th-note groove with more kick variations, and a short snare fill at the end of the last bar.' },
+  { grade: 'Grade 4', hat16: 0, kicks: [[0, 3, 10], [0, 3, 10], [0, 3, 8, 10], [0, 2, 8, 10], [0, 6, 8]], ghost: 0, open: 0.35, crash: 0.4, fill: 3, fillP: 0.8, half: 0,
+    blurb: 'Matched to a Rockschool Grade 4 example: kick on 1 and the "a" of 1 (dotted 8th and 16th), open hi-hat, crash on beat 1 and a short tom fill at the end.' },
+  { grade: 'Grade 4+', hat16: 0.25, kicks: [[0, 3, 8], [0, 3, 8, 11], [0, 2, 6, 8, 11], [0, 6, 8, 11], [0, 2, 3, 8, 10]], ghost: 0, open: 0.35, crash: 0.5, fill: 3, fillP: 0.8, half: 0,
+    blurb: 'First 16th-note kicks and some bars with 16th-note hi-hat. Crash on beat 1. Fills end on a run of 16ths.' },
+  { grade: 'Grade 5', hat16: 0.45, kicks: [[0, 3, 8, 10], [0, 2, 3, 8, 11], [0, 5, 8, 10], [0, 3, 6, 8, 11], [0, 2, 5, 8, 10]], ghost: 0.6, open: 0.4, crash: 0.5, fill: 4, fillP: 0.85, half: 0,
+    blurb: 'Ghost notes in brackets, more 16th-note hi-hat, busier kick patterns and a full 16th-note fill.' },
+  { grade: 'Grade 6', hat16: 0.5, kicks: [[0, 1, 8, 10], [0, 3, 6, 8, 11], [0, 2, 3, 6, 8, 10], [0, 3, 5, 8, 11, 14], [0, 2, 5, 8, 10, 13]], ghost: 0.8, open: 0.45, crash: 0.6, fill: 4, fillP: 0.9, half: 0.25,
+    blurb: 'Everything above, plus half-time bars in 4/4 (snare only on beat 3), clusters of ghost notes and kick doubles.' }
+];
+
+const HAND_ORDER = ['ft', 'sn', 'gs', 't2', 't1', 'hh', 'ho', 'cr'];
+// fill slots as written for a 16-slot bar; shifted for bars of other lengths so the fill sits at the end
+const FILL_SLOTS = {
+  1: [12, 14],
+  2: [8, 10, 12, 14],
+  3: [8, 10, 12, 13, 14, 15],
+  4: [8, 9, 10, 11, 12, 13, 14, 15]
+};
+const BEAT_PATTERNS = [
+  ['sn', 'sn', 'sn', 'sn'], ['sn', 'sn', 't1', 't1'], ['t1', 't1', 't2', 't2'],
+  ['t2', 't2', 'ft', 'ft'], ['sn', 't1', 't2', 'ft'], ['t1', 't2', 'ft', 'ft'], ['sn', 'sn', 't1', 't2']
+];
+const EIGHTH_PATHS = [['sn', 'sn', 'sn', 'sn'], ['sn', 'sn', 't1', 't2'], ['t1', 't1', 't2', 'ft'], ['sn', 't1', 't2', 'ft']];
+const TRIP_BEATS = [['sn', 'sn', 'sn'], ['sn', 't1', 't2'], ['t1', 't2', 'ft'], ['sn', 'sn', 't1'], ['t2', 't2', 'ft']];
+const FILL_68 = { 1: [8, 10], 2: [6, 8, 10], 3: [6, 8, 10], 4: [4, 6, 8, 10] };
+const FILL_TRIP = { 1: [9, 10, 11], 2: [9, 10, 11], 3: [6, 7, 8, 9, 10, 11], 4: [6, 7, 8, 9, 10, 11] };
+
+function clearFrom(bar, first) {
+  for (let s = first; s < bar.kick.length; s++) { bar.hands[s] = null; bar.kick[s] = false; }
+}
+function applyFill(bar, type, n) {
+  const slots = FILL_SLOTS[type].map((s) => s + n - 16);
+  clearFrom(bar, slots[0]);
+  if (type === 1) {
+    bar.hands[slots[0]] = ['sn']; bar.hands[slots[1]] = [pick(['sn', 't1'])];
+  } else if (type === 2) {
+    const path = pick(EIGHTH_PATHS);
+    slots.forEach((s, i) => { bar.hands[s] = [path[i]]; });
+  } else if (type === 3) {
+    const path = pick(EIGHTH_PATHS);
+    bar.hands[slots[0]] = [path[0]]; bar.hands[slots[1]] = [path[1]];
+    const beat = pick(BEAT_PATTERNS);
+    slots.slice(2).forEach((s, i) => { bar.hands[s] = [beat[i]]; });
+  } else {
+    const a = pick(BEAT_PATTERNS), b = pick(BEAT_PATTERNS);
+    slots.forEach((s, i) => { bar.hands[s] = [(i < 4 ? a : b)[i % 4]]; });
+  }
+}
+function sortHands(bar) {
+  bar.hands = bar.hands.map((h) => (h ? h.slice().sort((a, b) => HAND_ORDER.indexOf(a) - HAND_ORDER.indexOf(b)) : null));
+}
+function newBar(M) {
+  return { M, hands: Array(M.n).fill(null), kick: Array(M.n).fill(false) };
+}
+function wantsFill(L, bi, nBars) {
+  const isLast = bi === nBars - 1;
+  const isMid = nBars === 8 && bi === 3;
+  return !!L.fill && ((isLast && rnd(L.fillP)) || (isMid && rnd(L.fillP * 0.5)));
+}
+
+// 4/4, 3/4 and 5/4: straight 16th grid
+function genStraight(L, bi, nBars, M) {
+  const n = M.n, bar = newBar(M);
+  const four = n === 16;
+  const hat16 = rnd(L.hat16);
+  const half = four && rnd(L.half);
+  for (let s = 0; s < n; s += hat16 ? 1 : 2) bar.hands[s] = ['hh'];
+  const snareSlots = half ? [8] : four || n === 20 ? [4, 12] : pick([[8], [4, 8], [4, 8]]);
+  snareSlots.forEach((s) => { bar.hands[s] = (bar.hands[s] || []).concat('sn'); });
+  let kicks;
+  if (half) kicks = pick([[0, 10], [0, 3, 10], [0, 6, 10], [0, 3, 6, 10]]);
+  else if (hat16) kicks = pick([[0, 8], [0, 10], [0, 3, 8], [0, 8, 11], [0, 2, 8]]);
+  else kicks = pick(L.kicks);
+  kicks = kicks.filter((s) => s < n && !snareSlots.includes(s));
+  if (n === 20 && rnd(0.6)) kicks.push(pick([16, 18]));
+  kicks.forEach((s) => { bar.kick[s] = true; });
+  if (L.ghost && rnd(L.ghost)) {
+    const count = L.grade === 'Grade 6' ? pick([1, 2, 2, 3]) : pick([1, 1, 2]);
+    const cand = [3, 5, 7, 9, 11, 13, 15, 17, 19].filter((s) => s < n && !bar.kick[s]);
+    for (let i = 0; i < count && cand.length; i++) {
+      const s = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
+      bar.hands[s] = (bar.hands[s] || []).concat('gs');
+    }
+  }
+  if (bi === 0 && L.crash && rnd(L.crash)) bar.hands[0] = ['cr'];
+  const fill = wantsFill(L, bi, nBars);
+  if (fill) applyFill(bar, L.fill, n);
+  if (L.open && rnd(L.open)) {
+    const limit = fill ? FILL_SLOTS[L.fill][0] + n - 16 : n;
+    const cand = [6, 10, 14, 18].filter((s) => s < limit && bar.hands[s] && bar.hands[s].includes('hh'));
+    if (cand.length) { const s = pick(cand); bar.hands[s] = bar.hands[s].map((x) => (x === 'hh' ? 'ho' : x)); }
+  }
+  sortHands(bar);
+  return bar;
+}
+
+// 6/8: eighth-note grid, two dotted-quarter beats
+function gen68(L, bi, nBars, M) {
+  const bar = newBar(M);
+  const idx = LEVELS.indexOf(L);
+  for (let s = 0; s < 12; s += 2) bar.hands[s] = ['hh'];
+  bar.hands[6] = ['hh', 'sn'];
+  const pools = [
+    [[0], [0], [0, 8], [0, 10]],
+    [[0, 4], [0, 4, 8], [0, 2, 8], [0, 8, 10]],
+    [[0, 2, 4, 8], [0, 4, 8, 10], [0, 2, 8, 10], [0, 2, 4, 10]]
+  ];
+  pick(pools[idx < 2 ? 0 : idx < 4 ? 1 : 2]).forEach((s) => { bar.kick[s] = true; });
+  if (bi === 0 && L.crash && rnd(L.crash)) bar.hands[0] = ['cr'];
+  const fill = wantsFill(L, bi, nBars);
+  let limit = 12;
+  if (fill) {
+    const slots = FILL_68[L.fill];
+    limit = slots[0];
+    clearFrom(bar, limit);
+    const path = pick(EIGHTH_PATHS);
+    slots.forEach((s, i) => { bar.hands[s] = [path[i]]; });
+  }
+  if (L.open && rnd(L.open)) {
+    const cand = [4, 10].filter((s) => s < limit && bar.hands[s] && bar.hands[s].includes('hh'));
+    if (cand.length) { const s = pick(cand); bar.hands[s] = bar.hands[s].map((x) => (x === 'hh' ? 'ho' : x)); }
+  }
+  sortHands(bar);
+  return bar;
+}
+
+// shuffle: 4 beats of 3 triplet 8ths (slots 0-2 per beat)
+function genTrip(L, bi, nBars, M) {
+  const bar = newBar(M);
+  const idx = LEVELS.indexOf(L);
+  const full = idx >= 3 && rnd(0.3);
+  for (let b = 0; b < 4; b++) {
+    bar.hands[3 * b] = ['hh'];
+    bar.hands[3 * b + 2] = ['hh'];
+    if (full) bar.hands[3 * b + 1] = ['hh'];
+  }
+  [3, 9].forEach((s) => { bar.hands[s] = ['hh', 'sn']; });
+  const pools = [
+    [[0, 6], [0, 6], [0, 6, 8]],
+    [[0, 2, 6], [0, 6, 8], [0, 6, 11], [0, 2, 6, 8]],
+    [[0, 2, 6, 8], [0, 2, 6, 11], [0, 5, 6, 8], [0, 6, 8, 11], [0, 2, 5, 6, 8]]
+  ];
+  pick(pools[idx < 2 ? 0 : idx < 4 ? 1 : 2]).forEach((s) => { bar.kick[s] = true; });
+  if (L.ghost && rnd(L.ghost)) {
+    const cand = [2, 5, 8, 11].filter((s) => !bar.kick[s]);
+    const count = pick([1, 1, 2]);
+    for (let i = 0; i < count && cand.length; i++) {
+      const s = cand.splice(Math.floor(Math.random() * cand.length), 1)[0];
+      bar.hands[s] = (bar.hands[s] || []).concat('gs');
+    }
+  }
+  if (bi === 0 && L.crash && rnd(L.crash)) bar.hands[0] = ['cr'];
+  const fill = wantsFill(L, bi, nBars);
+  let limit = 12;
+  if (fill) {
+    const slots = FILL_TRIP[L.fill];
+    limit = slots[0];
+    clearFrom(bar, limit);
+    const groups = [pick(TRIP_BEATS), pick(TRIP_BEATS)];
+    slots.forEach((s, i) => { bar.hands[s] = [groups[Math.floor(i / 3)][i % 3]]; });
+  }
+  if (L.open && rnd(L.open)) {
+    const cand = [2, 8].filter((s) => s < limit && bar.hands[s] && bar.hands[s].includes('hh'));
+    if (cand.length) { const s = pick(cand); bar.hands[s] = bar.hands[s].map((x) => (x === 'hh' ? 'ho' : x)); }
+  }
+  sortHands(bar);
+  return bar;
+}
+
+function genBar(L, bi, nBars, M) {
+  if (M.kind === 'c68') return gen68(L, bi, nBars, M);
+  if (M.kind === 'trip') return genTrip(L, bi, nBars, M);
+  return genStraight(L, bi, nBars, M);
+}
+// Exam-style phrasing: one groove repeated, small changes at the end of each 2-bar phrase, a fill in the last bar
+function cloneBar(b) {
+  return { M: b.M, hands: b.hands.map((h) => (h ? h.slice() : null)), kick: b.kick.slice() };
+}
+function fillFor(bar, L) {
+  const M = bar.M;
+  if (M.kind === 'c68') {
+    const slots = FILL_68[L.fill];
+    clearFrom(bar, slots[0]);
+    const path = pick(EIGHTH_PATHS);
+    slots.forEach((s, i) => { bar.hands[s] = [path[i]]; });
+  } else if (M.kind === 'trip') {
+    const slots = FILL_TRIP[L.fill];
+    clearFrom(bar, slots[0]);
+    const groups = [pick(TRIP_BEATS), pick(TRIP_BEATS)];
+    slots.forEach((s, i) => { bar.hands[s] = [groups[Math.floor(i / 3)][i % 3]]; });
+  } else {
+    applyFill(bar, L.fill, M.n);
+  }
+}
+function varyBar(L, bar) {
+  const M = bar.M;
+  const openCand = (M.kind === 'c68' ? [4, 10] : M.kind === 'trip' ? [2, 8] : [6, 10, 14, 18])
+    .filter((s) => s < M.n && bar.hands[s] && bar.hands[s].includes('hh'));
+  const options = [];
+  if (openCand.length) options.push('open');
+  if (M.kind === 'straight') options.push('kick');
+  if (!options.length) return;
+  if (pick(options) === 'open') {
+    const s = pick(openCand);
+    bar.hands[s] = bar.hands[s].map((x) => (x === 'hh' ? 'ho' : x));
+  } else {
+    const snare = M.n === 12 ? [4, 8] : [4, 12];
+    const cand = [2, 6, 10, 14, 18].filter((s) => s < M.n && !bar.kick[s] && !snare.includes(s));
+    if (cand.length) bar.kick[pick(cand)] = true;
+  }
+}
+function genRepeated(L, nBars, M) {
+  const base = genBar(L, 1, 3, M); // no fill, no crash
+  const bars = [];
+  for (let i = 0; i < nBars; i++) {
+    const bar = cloneBar(base);
+    const last = i === nBars - 1;
+    if (i === 0 && L.crash && rnd(L.crash)) bar.hands[0] = ['cr'];
+    if (last && L.fill && rnd(L.fillP)) fillFor(bar, L);
+    else if ((last || i % 2 === 1) && rnd(0.5)) varyBar(L, bar);
+    sortHands(bar);
+    bars.push(bar);
+  }
+  return bars;
+}
+function genPattern(levelIdx, nBars, meterId, repeat) {
+  const L = LEVELS[levelIdx];
+  const M = METERS[meterId || '4/4'];
+  if (repeat) return genRepeated(L, nBars, M);
+  const bars = [];
+  for (let i = 0; i < nBars; i++) bars.push(genBar(L, i, nBars, M));
+  return bars;
+}
+
+/* ---------- Turn a voice into note and rest tokens ---------- */
+function restFill(p, end, out, lens) {
+  while (p < end) {
+    const len = lens.find((l) => l <= end - p && p % l === 0);
+    out.push({ rest: true, s: p, len });
+    p += len;
+  }
+}
+function tripTokens(events) {
+  const out = [];
+  for (let b = 0; b < 4; b++) {
+    const s0 = 3 * b;
+    const e = [events[s0], events[s0 + 1], events[s0 + 2]];
+    const count = e.filter(Boolean).length;
+    if (!count) out.push({ rest: true, s: s0, len: 3, trip: false });
+    else if (e[0] && count === 1) out.push({ rest: false, s: s0, len: 3, trip: false, ev: e[0] });
+    else e.forEach((ev, i) => out.push({ rest: !ev, s: s0 + i, len: 1, trip: true, grp: b, ev }));
+  }
+  return out;
+}
+function voiceTokens(events, M) {
+  if (M.kind === 'trip') return tripTokens(events);
+  const n = M.n;
+  const small = M.kind === 'c68';
+  const restLens = small ? [2, 1] : [16, 8, 4, 2, 1];
+  const noteLens = small ? [2, 1] : [4, 2, 1];
+  const out = [];
+  const onsets = [];
+  events.forEach((e, i) => { if (e) onsets.push(i); });
+  if (!onsets.length) { restFill(0, n, out, restLens); return out; }
+  restFill(0, onsets[0], out, restLens);
+  onsets.forEach((s, k) => {
+    const next = k + 1 < onsets.length ? onsets[k + 1] : n;
+    const gap = next - s;
+    const len = noteLens.find((l) => l <= gap && s % l === 0);
+    out.push({ rest: false, s, len, ev: events[s] });
+    restFill(s + len, next, out, restLens);
+  });
+  return out;
+}
+const DUR = { 1: '16', 2: '8', 3: 'q', 4: 'q', 8: 'h', 16: 'w' };
+function durOf(tok) { return tok.trip ? '8' : DUR[tok.len]; }
+
+if (typeof module !== 'undefined') module.exports = { METERS, LEVELS, genPattern, voiceTokens };
+/* ---------- Notation ---------- */
+const $ = (id) => document.getElementById(id);
+const sheetEl = $('sheet');
+const KEYS = { ft: 'a/4', sn: 'c/5', gs: 'c/5', t2: 'd/5', t1: 'e/5', hh: 'g/5/x2', ho: 'g/5/x2', cr: 'a/5/x2' };
+const ROW_H = 190;
+const app = { level: 0, bars: 4, bpm: 70, hear: false, meters: ['4/4'], pattern: [], layout: [], M: METERS['4/4'] };
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function makeNote(VF, tok, voice, muted) {
+  const stem = voice === 1 ? 1 : -1;
+  const dur = durOf(tok);
+  if (tok.rest) {
+    return new VF.StaveNote({ keys: [voice === 1 ? 'b/5' : 'd/4'], duration: dur + 'r', stem_direction: stem, clef: 'percussion' });
+  }
+  const keys = voice === 2 ? ['f/4'] : tok.ev.map((k) => KEYS[k]);
+  const note = new VF.StaveNote({ keys, duration: dur, stem_direction: stem, clef: 'percussion' });
+  if (voice === 1) {
+    const open = tok.ev.indexOf('ho');
+    if (open >= 0) {
+      try { note.addModifier(new VF.Articulation('ah').setPosition(VF.Modifier.Position.ABOVE), open); } catch (e) { /* notation still readable */ }
+    }
+    const ghost = tok.ev.indexOf('gs');
+    if (ghost >= 0) {
+      try {
+        note.addModifier(new VF.Parenthesis(VF.Modifier.Position.LEFT), ghost);
+        note.addModifier(new VF.Parenthesis(VF.Modifier.Position.RIGHT), ghost);
+        note.setKeyStyle(ghost, { fillStyle: muted, strokeStyle: muted });
+      } catch (e) { /* ghost note shown as a normal snare note */ }
+    }
+  }
+  return note;
+}
+
+function tripGroups(notes, toks) {
+  const groups = {};
+  toks.forEach((t, i) => { if (t.trip) (groups[t.grp] = groups[t.grp] || []).push(i); });
+  return Object.values(groups);
+}
+function makeBeams(VF, notes, toks, M) {
+  if (M.kind === 'trip') {
+    const out = [];
+    tripGroups(notes, toks).forEach((idxs) => {
+      let run = [];
+      const flush = () => { if (run.length > 1) out.push(new VF.Beam(run)); run = []; };
+      idxs.forEach((i) => { if (toks[i].rest) flush(); else run.push(notes[i]); });
+      flush();
+    });
+    return out;
+  }
+  const group = M.kind === 'c68' ? new VF.Fraction(3, 8) : new VF.Fraction(1, 4);
+  return VF.Beam.generateBeams(notes, { groups: [group], maintain_stem_directions: true });
+}
+
+function drawRow(VF, rowEl, W, bars, firstIdx, ink, muted) {
+  const renderer = new VF.Renderer(rowEl, VF.Renderer.Backends.SVG);
+  renderer.resize(W, ROW_H);
+  const ctx = renderer.getContext();
+  ctx.setFillStyle(ink);
+  ctx.setStrokeStyle(ink);
+  const sw = (W - 2) / bars.length;
+  bars.forEach((bar, k) => {
+    const idx = firstIdx + k;
+    const M = bar.M;
+    const stave = new VF.Stave(1 + k * sw, 30, sw);
+    if (k === 0) stave.addClef('percussion');
+    if (idx === 0) stave.addTimeSignature(M.ts.join('/'));
+    stave.setContext(ctx).draw();
+
+    const t1 = voiceTokens(bar.hands, M);
+    const t2 = voiceTokens(bar.kick.map((x) => (x ? ['k'] : null)), M);
+    const n1 = t1.map((t) => makeNote(VF, t, 1, muted));
+    const n2 = t2.map((t) => makeNote(VF, t, 2, muted));
+    const tuplets = [];
+    if (M.kind === 'trip') {
+      tripGroups(n1, t1).forEach((idxs) => tuplets.push(new VF.Tuplet(idxs.map((i) => n1[i]), { location: 1 })));
+      tripGroups(n2, t2).forEach((idxs) => tuplets.push(new VF.Tuplet(idxs.map((i) => n2[i]), { location: -1 })));
+    }
+    const vopts = { num_beats: M.ts[0], beat_value: M.ts[1] };
+    const v1 = new VF.Voice(vopts).addTickables(n1);
+    const v2 = new VF.Voice(vopts).addTickables(n2);
+    const beams = makeBeams(VF, n1, t1, M).concat(makeBeams(VF, n2, t2, M));
+    new VF.Formatter().joinVoices([v1]).joinVoices([v2]).formatToStave([v1, v2], stave);
+    v1.draw(ctx, stave);
+    v2.draw(ctx, stave);
+    beams.forEach((b) => b.setContext(ctx).draw());
+    tuplets.forEach((t) => t.setContext(ctx).draw());
+
+    // x position of every slot, for the playhead
+    const known = {};
+    t2.forEach((t, i) => { known[t.s] = n2[i].getAbsoluteX(); });
+    t1.forEach((t, i) => { known[t.s] = n1[i].getAbsoluteX(); });
+    known[M.n] = stave.getNoteEndX();
+    const ks = Object.keys(known).map(Number).sort((a, b) => a - b);
+    const xs = [];
+    for (let s = 0; s < M.n; s++) {
+      let lo = ks[0], hi = ks[ks.length - 1];
+      ks.forEach((q) => { if (q <= s) lo = q; });
+      for (let i = ks.length - 1; i >= 0; i--) if (ks[i] > s) hi = ks[i];
+      xs[s] = hi === lo ? known[lo] : known[lo] + (known[hi] - known[lo]) * ((s - lo) / (hi - lo));
+    }
+    app.layout[idx] = { rowEl, xs };
+  });
+}
+
+function render() {
+  const err = $('err');
+  err.hidden = true;
+  sheetEl.textContent = '';
+  app.layout = [];
+  const M = app.pattern.length ? app.pattern[0].M : METERS['4/4'];
+  app.M = M;
+  $('meta').textContent = LEVELS[app.level].grade + ' · ' + M.label + ' · ' + app.bars + ' bars';
+  $('tempoUnit').textContent = 'BPM (' + M.unit + ')';
+  const dots = $('beats');
+  dots.textContent = '';
+  for (let i = 0; i < M.beats; i++) dots.appendChild(document.createElement('i'));
+  const VF = window.Vex && window.Vex.Flow;
+  if (!VF) {
+    err.hidden = false;
+    err.textContent = 'The notation library did not load, so the line cannot be drawn. Check your connection and reload the page.';
+    return;
+  }
+  const W = Math.floor(sheetEl.clientWidth - 32);
+  if (W < 220) return;
+  const per = W >= 720 ? 2 : 1;
+  const ink = cssVar('--ink', '#000');
+  const muted = cssVar('--muted', '#666');
+  try {
+    for (let i = 0; i < app.pattern.length; i += per) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'row';
+      sheetEl.appendChild(rowEl);
+      drawRow(VF, rowEl, W, app.pattern.slice(i, i + per), i, ink, muted);
+      const head = document.createElement('div');
+      head.className = 'playhead';
+      rowEl.appendChild(head);
+    }
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = 'Could not draw this line (' + (e && e.message ? e.message : e) + '). Press Generate new line to try another.';
+  }
+}
+
+function newLine() {
+  stopPlay();
+  app.pattern = genPattern(app.level, app.bars, pick(app.meters), $('repeat').checked);
+  render();
+}
+
+/* ---------- Settings UI ---------- */
+function save() {
+  try {
+    localStorage.setItem('kitreader', JSON.stringify({
+      level: app.level, bars: app.bars, bpm: app.bpm, meters: app.meters,
+      loop: $('loop').checked, countin: $('countin').checked, clickHear: $('clickHear').checked,
+      repeat: $('repeat').checked
+    }));
+  } catch (e) { /* storage unavailable */ }
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem('kitreader') || 'null');
+    if (!s) return;
+    if (s.level >= 0 && s.level < LEVELS.length) app.level = s.level;
+    if ([2, 4, 8].includes(s.bars)) app.bars = s.bars;
+    if (s.bpm >= 30 && s.bpm <= 240) app.bpm = s.bpm;
+    if (Array.isArray(s.meters)) {
+      const ok = s.meters.filter((m) => METERS[m]);
+      if (ok.length) app.meters = ok;
+    }
+    $('loop').checked = s.loop !== false;
+    $('countin').checked = s.countin !== false;
+    $('clickHear').checked = s.clickHear !== false;
+    $('repeat').checked = s.repeat === true;
+  } catch (e) { /* ignore */ }
+}
+function syncUI() {
+  const box = $('levels');
+  box.textContent = '';
+  LEVELS.forEach((L, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lvl';
+    b.setAttribute('aria-pressed', String(i === app.level));
+    b.innerHTML = '<b>' + (i + 1) + '</b><span>' + L.grade + '</span>';
+    b.addEventListener('click', () => { app.level = i; syncUI(); save(); newLine(); });
+    box.appendChild(b);
+  });
+  $('blurb').textContent = LEVELS[app.level].blurb;
+  $('tempo').value = Math.min(180, Math.max(40, app.bpm));
+  $('tempoNum').value = app.bpm;
+  $('bars').value = String(app.bars);
+  document.querySelectorAll('#meters input[data-m]').forEach((c) => { c.checked = app.meters.includes(c.dataset.m); });
+}
+document.querySelectorAll('#meters input[data-m]').forEach((c) => {
+  c.addEventListener('change', () => {
+    let list = Array.from(document.querySelectorAll('#meters input[data-m]')).filter((x) => x.checked).map((x) => x.dataset.m);
+    if (!list.length) { list = ['4/4']; }
+    app.meters = list;
+    syncUI();
+    save();
+    newLine();
+  });
+});
+/* ---------- Synthesised drum kit (Web Audio, no samples) ---------- */
+let ac = null, master = null, bus = null, noiseBuf = null;
+function audio() {
+  if (!ac) {
+    const C = window.AudioContext || window.webkitAudioContext;
+    ac = new C();
+    master = ac.createGain();
+    master.gain.value = 0.85;
+    const comp = ac.createDynamicsCompressor();
+    master.connect(comp);
+    comp.connect(ac.destination);
+    noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (ac.state !== 'running') ac.resume();
+  return ac;
+}
+// every sound goes through a bus, so pause and stop can silence sounds that are already scheduled
+function newBus() {
+  silenceBus();
+  bus = ac.createGain();
+  bus.connect(master);
+}
+function silenceBus() {
+  if (!bus || !ac) return;
+  try { bus.gain.cancelScheduledValues(ac.currentTime); bus.gain.setValueAtTime(0, ac.currentTime); } catch (e) { /* ignore */ }
+}
+function noise(t, dur, type, freq, vol) {
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuf;
+  const f = ac.createBiquadFilter();
+  f.type = type;
+  f.frequency.value = freq;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(f); f.connect(g); g.connect(bus);
+  src.start(t, Math.random() * 0.5);
+  src.stop(t + dur + 0.02);
+}
+function tone(t, type, f0, f1, dur, vol) {
+  const o = ac.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, t);
+  o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.6);
+  const g = ac.createGain();
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(bus);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+const KIT = {
+  k: (t) => { tone(t, 'sine', 150, 45, 0.32, 1.0); noise(t, 0.02, 'lowpass', 1200, 0.3); },
+  sn: (t) => { noise(t, 0.2, 'highpass', 1700, 0.7); tone(t, 'triangle', 200, 150, 0.12, 0.5); },
+  gs: (t) => { noise(t, 0.08, 'highpass', 1700, 0.16); tone(t, 'triangle', 200, 150, 0.06, 0.1); },
+  hh: (t) => noise(t, 0.05, 'highpass', 7500, 0.32),
+  ho: (t) => noise(t, 0.36, 'highpass', 7000, 0.3),
+  cr: (t) => noise(t, 1.3, 'highpass', 4200, 0.45),
+  t1: (t) => tone(t, 'sine', 240, 150, 0.28, 0.8),
+  t2: (t) => tone(t, 'sine', 180, 110, 0.32, 0.85),
+  ft: (t) => tone(t, 'sine', 130, 80, 0.38, 0.9)
+};
+function click(t, accent, vol) {
+  const o = ac.createOscillator();
+  o.type = 'square';
+  o.frequency.value = accent ? 1500 : 1000;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  o.connect(g); g.connect(bus);
+  o.start(t);
+  o.stop(t + 0.05);
+}
+
+/* ---------- Transport ----------
+   Play starts or pauses. Stop goes back to the start (the next Play begins with the count-in).
+   Hear it switches the kit sound on and off while the line keeps playing.
+   The click always plays when the kit is off, and plays under the kit only if "Click while kit is on" is ticked. */
+const play = { on: false, paused: false, step: 0, next: 0, timer: 0, raf: 0, queue: [], endAt: 0 };
+
+function scheduleStep(step, t) {
+  const M = app.M;
+  if (step < 0) { if (step % M.beat === 0) click(t, step === -M.n, 0.5); return; }
+  const bar = Math.floor(step / M.n), slot = step % M.n;
+  const b = app.pattern[bar];
+  if (!b) return;
+  if (app.hear) {
+    (b.hands[slot] || []).forEach((i) => KIT[i](t));
+    if (b.kick[slot]) KIT.k(t);
+  }
+  if (slot % M.beat === 0 && (!app.hear || $('clickHear').checked)) click(t, slot === 0, app.hear ? 0.14 : 0.5);
+}
+function tick() {
+  const total = app.bars * app.M.n;
+  while (play.next < ac.currentTime + 0.12) {
+    scheduleStep(play.step, play.next);
+    play.queue.push({ t: play.next, step: play.step });
+    play.next += 60 / app.bpm / app.M.div;
+    play.step++;
+    if (play.step >= total) {
+      if ($('loop').checked) play.step = 0;
+      else { play.endAt = play.next + 0.6; clearInterval(play.timer); play.timer = 0; break; }
+    }
+  }
+}
+function showStep(step) {
+  const M = app.M;
+  const dots = $('beats').children;
+  const heads = sheetEl.querySelectorAll('.playhead');
+  heads.forEach((h) => { h.style.opacity = 0; });
+  if (step < 0) {
+    const beat = Math.floor((step + M.n) / M.beat);
+    for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i === beat);
+    $('status').textContent = 'Count ' + (beat + 1);
+    return;
+  }
+  const bar = Math.floor(step / M.n), slot = step % M.n;
+  for (let i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i === Math.floor(slot / M.beat));
+  $('status').textContent = 'Bar ' + (bar + 1) + ' of ' + app.bars;
+  const L = app.layout[bar];
+  if (L) {
+    const head = L.rowEl.querySelector('.playhead');
+    if (head) { head.style.left = (L.xs[slot] + 3) + 'px'; head.style.opacity = 1; }
+  }
+}
+function frame() {
+  if (!play.on) return;
+  const now = ac.currentTime;
+  let cur = null;
+  while (play.queue.length && play.queue[0].t <= now) cur = play.queue.shift();
+  if (cur) showStep(cur.step);
+  if (play.endAt && now >= play.endAt) { stopPlay(); return; }
+  play.raf = requestAnimationFrame(frame);
+}
+function setButtons() {
+  $('playBtn').setAttribute('aria-pressed', String(play.on));
+  $('playBtn').setAttribute('aria-label', play.on ? 'Pause' : 'Play');
+  $('hearBtn').setAttribute('aria-pressed', String(app.hear));
+}
+function startPlay() {
+  try { audio(); } catch (e) { $('status').textContent = 'No audio'; return; }
+  newBus();
+  if (!play.paused) play.step = $('countin').checked ? -app.M.n : 0;
+  play.paused = false;
+  play.on = true;
+  play.queue = [];
+  play.endAt = 0;
+  play.next = ac.currentTime + 0.15;
+  play.timer = setInterval(tick, 25);
+  play.raf = requestAnimationFrame(frame);
+  setButtons();
+}
+function pausePlay() {
+  if (!play.on) return;
+  const resumeAt = play.queue.length ? play.queue[0].step : play.step;
+  if (play.timer) clearInterval(play.timer);
+  play.timer = 0;
+  cancelAnimationFrame(play.raf);
+  silenceBus();
+  play.step = resumeAt;
+  play.on = false;
+  play.paused = true;
+  play.queue = [];
+  play.endAt = 0;
+  $('status').textContent = 'Paused';
+  setButtons();
+}
+function stopPlay() {
+  if (play.timer) clearInterval(play.timer);
+  play.timer = 0;
+  cancelAnimationFrame(play.raf);
+  silenceBus();
+  play.on = false;
+  play.paused = false;
+  play.step = 0;
+  play.queue = [];
+  play.endAt = 0;
+  Array.from($('beats').children).forEach((d) => d.classList.remove('on'));
+  sheetEl.querySelectorAll('.playhead').forEach((h) => { h.style.opacity = 0; });
+  $('status').textContent = 'Ready';
+  setButtons();
+}
+
+/* ---------- Tempo ---------- */
+function setBpm(v, fromSlider) {
+  app.bpm = v;
+  $('tempoNum').value = v;
+  if (!fromSlider) $('tempo').value = Math.min(180, Math.max(40, v));
+  save();
+}
+function commitTempo() {
+  let v = parseInt($('tempoNum').value, 10);
+  if (!isFinite(v)) v = app.bpm;
+  setBpm(Math.min(240, Math.max(30, v)), false);
+}
+
+/* ---------- Start up ---------- */
+$('newBtn').addEventListener('click', newLine);
+$('playBtn').addEventListener('click', () => { if (play.on) pausePlay(); else startPlay(); });
+$('stopBtn').addEventListener('click', stopPlay);
+$('hearBtn').addEventListener('click', () => { app.hear = !app.hear; setButtons(); });
+$('tempo').addEventListener('input', (e) => setBpm(Number(e.target.value), true));
+const tempoNum = $('tempoNum');
+tempoNum.addEventListener('focus', () => tempoNum.select());
+tempoNum.addEventListener('input', () => { tempoNum.value = tempoNum.value.replace(/\D/g, '').slice(0, 3); });
+tempoNum.addEventListener('change', commitTempo);
+tempoNum.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commitTempo(); tempoNum.blur(); } });
+$('bars').addEventListener('change', (e) => { app.bars = Number(e.target.value); save(); newLine(); });
+['loop', 'countin', 'clickHear'].forEach((id) => $(id).addEventListener('change', save));
+$('repeat').addEventListener('change', () => { save(); newLine(); });
+
+load();
+syncUI();
+app.pattern = genPattern(app.level, app.bars, pick(app.meters), $('repeat').checked);
+render();
+setButtons();
+
+let lastW = sheetEl.clientWidth, rt = 0;
+if (window.ResizeObserver) {
+  new ResizeObserver(() => {
+    if (sheetEl.clientWidth === lastW) return;
+    lastW = sheetEl.clientWidth;
+    clearTimeout(rt);
+    rt = setTimeout(render, 120);
+  }).observe(sheetEl);
+}
+const redraw = () => setTimeout(render, 30);
+try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); } catch (e) { /* older browsers */ }
+new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
+
+</body></html>
